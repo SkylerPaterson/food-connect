@@ -3,125 +3,311 @@ import { useNavigate } from 'react-router-dom';
 
 function FoodBankDashboard() {
   const navigate = useNavigate();
-  const [listings] = useState([
+  const [claimed, setClaimed] = useState([]);
+  const [listings, setListings] = useState([
     {
       id: 1,
-      restaurant: "Mario's Italian",
+      restaurantName: "Mario's Italian",
       foodItem: 'Pasta & Bread',
       quantity: '20 portions',
-      pickupTime: 'Today 8pm-9pm',
+      pickupTime: 'Today 8pm - 9pm',
       notes: 'Contains gluten',
-      claimed: false,
     },
     {
       id: 2,
-      restaurant: "Sunrise Cafe",
+      restaurantName: 'Sunrise Cafe',
       foodItem: 'Sandwiches & Soup',
       quantity: '15 portions',
-      pickupTime: 'Today 7pm-8pm',
+      pickupTime: 'Today 7pm - 8pm',
       notes: 'Vegetarian friendly',
-      claimed: false,
     },
     {
       id: 3,
-      restaurant: "Green Bowl",
+      restaurantName: 'Green Bowl',
       foodItem: 'Rice & Vegetables',
       quantity: '30 portions',
-      pickupTime: 'Today 9pm-10pm',
+      pickupTime: 'Today 9pm - 10pm',
       notes: 'Vegan, no allergens',
-      claimed: false,
     },
   ]);
+  const [tab, setTab] = useState('available');
 
-  const [claimedIds, setClaimedIds] = useState([]);
-
-  const handleClaim = (id) => {
-    if (claimedIds.includes(id)) {
-      alert('You already claimed this listing!');
-      return;
-    }
-    setClaimedIds([...claimedIds, id]);
-    alert('Successfully claimed! Please pick up at the listed time.');
+  const handleClaim = (listing) => {
+    setListings(listings.filter((l) => l.id !== listing.id));
+    setClaimed([{ ...listing, claimedAt: 'Just now' }, ...claimed]);
   };
 
-  return (
-    <div style={styles.container}>
-      <button style={styles.backBtn} onClick={() => navigate('/')}>← Back</button>
-      <h1 style={styles.title}>🏦 Available Food Listings</h1>
-      <p style={styles.subtitle}>Browse and claim surplus food from local restaurants</p>
+  const available = listings;
+  const display = tab === 'available' ? available : claimed;
 
-      {listings.map(listing => (
-        <div key={listing.id} style={styles.card}>
-          <h3 style={styles.restaurantName}>🍽️ {listing.restaurant}</h3>
-          <p><strong>Food:</strong> {listing.foodItem}</p>
-          <p>📦 <strong>Quantity:</strong> {listing.quantity}</p>
-          <p>🕐 <strong>Pickup:</strong> {listing.pickupTime}</p>
-          {listing.notes && <p>📝 <strong>Notes:</strong> {listing.notes}</p>}
+  return (
+    <div style={styles.page}>
+      <nav style={styles.nav}>
+        <span style={styles.navLogo}>FoodConnect</span>
+        <button style={styles.backBtn} onClick={() => navigate('/')}>Back to Home</button>
+      </nav>
+
+      <div style={styles.container}>
+        <div style={styles.pageHeader}>
+          <h1 style={styles.pageTitle}>Food Bank Dashboard</h1>
+          <p style={styles.pageSubtitle}>Browse and claim surplus food from local restaurants.</p>
+        </div>
+
+        <div style={styles.tabs}>
           <button
-            style={claimedIds.includes(listing.id) ? styles.claimedBtn : styles.claimBtn}
-            onClick={() => handleClaim(listing.id)}
+            style={tab === 'available' ? styles.tabActive : styles.tabInactive}
+            onClick={() => setTab('available')}
           >
-            {claimedIds.includes(listing.id) ? '✅ Claimed!' : 'Claim This Food'}
+            Available Food
+            {available.length > 0 && (
+              <span style={styles.tabBadge}>{available.length}</span>
+            )}
+          </button>
+          <button
+            style={tab === 'claimed' ? styles.tabActive : styles.tabInactive}
+            onClick={() => setTab('claimed')}
+          >
+            My Claims
+            {claimed.length > 0 && (
+              <span style={styles.tabBadge}>{claimed.length}</span>
+            )}
           </button>
         </div>
-      ))}
+
+        {display.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyMsg}>
+              {tab === 'available'
+                ? 'No food available right now — check back soon!'
+                : "You haven't claimed anything yet."}
+            </p>
+          </div>
+        ) : (
+          display.map((listing) => (
+            <div key={listing.id} style={styles.card}>
+              <div style={styles.cardTop}>
+                <div>
+                  <h3 style={styles.foodItem}>{listing.foodItem}</h3>
+                  <p style={styles.restaurantName}>{listing.restaurantName}</p>
+                </div>
+                {tab === 'claimed' && (
+                  <span style={styles.claimedBadge}>Claimed</span>
+                )}
+              </div>
+
+              <div style={styles.metaRow}>
+                <div style={styles.metaChip}>
+                  <span style={styles.metaLabel}>Quantity</span>
+                  <span style={styles.metaValue}>{listing.quantity}</span>
+                </div>
+                <div style={styles.metaChip}>
+                  <span style={styles.metaLabel}>Pickup</span>
+                  <span style={styles.metaValue}>{listing.pickupTime}</span>
+                </div>
+                {listing.notes && (
+                  <div style={styles.metaChip}>
+                    <span style={styles.metaLabel}>Notes</span>
+                    <span style={styles.metaValue}>{listing.notes}</span>
+                  </div>
+                )}
+              </div>
+
+              {tab === 'available' && (
+                <button
+                  style={styles.claimBtn}
+                  onClick={() => handleClaim(listing)}
+                >
+                  Claim This Food
+                </button>
+              )}
+
+              {tab === 'claimed' && (
+                <p style={styles.claimedNote}>
+                  Claimed {listing.claimedAt} · Contact the restaurant to confirm pickup.
+                </p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
 
+const navy = '#0f1f3d';
+const amber = '#f0a500';
+const bg = '#f5f7fa';
+
 const styles = {
-  container: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'Arial, sans-serif',
+  page: {
+    minHeight: '100vh',
+    backgroundColor: bg,
+    fontFamily: "'Helvetica Neue', Arial, sans-serif",
+  },
+  nav: {
+    padding: '18px 40px',
+    backgroundColor: navy,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navLogo: {
+    color: 'white',
+    fontSize: '1.2rem',
+    fontWeight: '700',
   },
   backBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#2d6a4f',
-    fontSize: '1rem',
+    backgroundColor: 'transparent',
+    color: 'rgba(255,255,255,0.7)',
+    border: '1px solid rgba(255,255,255,0.3)',
+    padding: '8px 18px',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
     cursor: 'pointer',
-    marginBottom: '10px',
   },
-  title: {
+  container: {
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '48px 24px',
+  },
+  pageHeader: {
+    marginBottom: '32px',
+  },
+  pageTitle: {
     fontSize: '2rem',
-    color: '#2d6a4f',
+    fontWeight: '800',
+    color: navy,
+    marginBottom: '8px',
   },
-  subtitle: {
-    color: '#555',
-    marginBottom: '20px',
+  pageSubtitle: {
+    fontSize: '1rem',
+    color: '#6b7a99',
+  },
+  tabs: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '24px',
+  },
+  tabActive: {
+    backgroundColor: navy,
+    color: 'white',
+    border: 'none',
+    padding: '10px 24px',
+    borderRadius: '8px',
+    fontSize: '0.95rem',
+    fontWeight: '700',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  tabInactive: {
+    backgroundColor: 'white',
+    color: '#6b7a99',
+    border: '1px solid #e4e8f0',
+    padding: '10px 24px',
+    borderRadius: '8px',
+    fontSize: '0.95rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  tabBadge: {
+    backgroundColor: amber,
+    color: navy,
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    padding: '2px 8px',
+    borderRadius: '20px',
+  },
+  emptyState: {
+    backgroundColor: 'white',
+    border: '1px solid #e4e8f0',
+    borderRadius: '12px',
+    padding: '60px 24px',
+    textAlign: 'center',
+  },
+  emptyMsg: {
+    color: '#9aa5bf',
+    fontStyle: 'italic',
   },
   card: {
     backgroundColor: 'white',
-    padding: '20px',
-    borderRadius: '10px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    marginBottom: '15px',
+    border: '1px solid #e4e8f0',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '16px',
+  },
+  cardTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '16px',
+  },
+  foodItem: {
+    fontSize: '1.2rem',
+    fontWeight: '700',
+    color: navy,
+    marginBottom: '4px',
   },
   restaurantName: {
-    color: '#2d6a4f',
-    marginBottom: '10px',
+    fontSize: '0.9rem',
+    color: '#6b7a99',
+  },
+  claimedBadge: {
+    backgroundColor: '#e8f5ee',
+    color: '#1a7a4a',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    padding: '4px 12px',
+    borderRadius: '20px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  metaRow: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    marginBottom: '20px',
+  },
+  metaChip: {
+    backgroundColor: bg,
+    border: '1px solid #e4e8f0',
+    borderRadius: '8px',
+    padding: '8px 14px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  metaLabel: {
+    fontSize: '0.72rem',
+    fontWeight: '700',
+    color: '#9aa5bf',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  metaValue: {
+    fontSize: '0.9rem',
+    color: navy,
+    fontWeight: '500',
   },
   claimBtn: {
-    marginTop: '10px',
-    padding: '10px 20px',
-    fontSize: '1rem',
-    backgroundColor: '#52b788',
-    color: 'white',
+    backgroundColor: amber,
+    color: navy,
     border: 'none',
+    padding: '12px 28px',
     borderRadius: '8px',
+    fontSize: '0.95rem',
+    fontWeight: '700',
     cursor: 'pointer',
   },
-  claimedBtn: {
-    marginTop: '10px',
-    padding: '10px 20px',
-    fontSize: '1rem',
-    backgroundColor: '#ccc',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
+  claimedNote: {
+    fontSize: '0.85rem',
+    color: '#6b7a99',
+    fontStyle: 'italic',
+    marginTop: '4px',
   },
 };
 
